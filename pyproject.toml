@@ -1,0 +1,70 @@
+# Virtual workspace root: uv owns resolution (uv.lock is THE pin), each
+# package under packages/* builds independently (hatchling).
+[project]
+name = "omnipython-workspace"
+version = "0.1.0"
+description = "OmniPython monorepo workspace (virtual root)"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3",
+  "pytest-cov>=6.0",
+  "hypothesis>=6.100",
+  "pyright>=1.1.380",
+  "ruff>=0.8",
+  "mkdocs-material>=9.5",
+  # workspace members (editable) so tests import like real consumers do
+  "omni-core",
+  "omnistats",
+  "pytest-benchmark>=5.3.0",
+  "ty>=0.0.85,<0.1",
+]
+
+[tool.uv.sources]
+omni-core = { workspace = true }
+omnistats = { workspace = true }
+
+# ---------- gates: lint + types + coverage (single source each) ----------
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+format.quote-style = "double"
+
+[tool.ruff.lint]
+# S = bandit rules live here now; no separate security scanner.
+select = ["E", "F", "I", "UP", "B", "SIM", "S", "RUF", "PT"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["omni_core", "omnistats"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S101"] # asserts are the point in tests
+
+[tool.ty.environment]
+# ty needs the uv-workspace member sources on its path; pyright gets this via
+# extraPaths below. Same intent, different key.
+extra-paths = ["packages/omni-core/src", "packages/omnistats/src"]
+root = ["./packages/omni-core/src", "./packages/omnistats/src"]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+include = ["packages"]
+# Workspace packages are installed editable from source — their types ARE
+# the sources, so missing stub files are expected and harmless.
+extraPaths = ["packages/omni-core/src", "packages/omnistats/src"]
+reportMissingTypeStubs = false
+
+[tool.pytest.ini_options]
+testpaths = ["packages"]
+addopts = "--cov --cov-fail-under=90 --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["packages"]
