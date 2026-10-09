@@ -1,4 +1,4 @@
-_commit: v0.1.0
+_commit: v0.1.1
 _src_path: https://github.com/WyattAu/OmniPython-template
 exclude:
 - copier.yml
